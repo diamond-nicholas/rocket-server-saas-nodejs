@@ -1,0 +1,256 @@
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        githubId:
+          type: string
+        isEmailVerified:
+          type: boolean
+        role:
+          type: string
+          enum: [user, admin]
+        activeTeam:
+          type: string
+        teams:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              role:
+                type: string
+                enum: [teamUser, teamAdmin, teamOwner]
+        subscription:
+          type: object
+          properties:
+            id:
+              type: string
+            subscriptionType:
+              type: string
+        stripePaymentMethod:
+          type: object
+          properties:
+            id:
+              type: string
+            last4: 
+              type: string
+              minLength: 4
+              maxLength: 4
+      example:
+        id: 5ebac534954b54139806c112
+        email: fake@example.com
+        name: fake name
+        githubId: null
+        isEmailVerified: false
+        role: user
+        activeTeam: hbGciOiJIUzI1NiIsInR5cCI
+        teams:
+          - id: hbGciOiJIUzI1NiIsInR5cCI
+            name: fake team
+            role: teamOwner 
+        subscription:
+          id: sub_J8YWeGOTxiuuz3
+          subscriptionType: basic
+        stripePaymentMethod:
+          id: 0ODQsImV4cCI6MTU4OTMwMDI
+          last4: 9999
+
+    Invitation:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [teamUser, teamAdmin]
+        created:
+          type: string
+          format: date-time
+      example:
+        email: fake_invitation@example.com
+        role: teamAdmin
+        created: 2020-05-12T16:18:04.793Z
+
+    Team:
+      type: object
+      properties:
+        name:
+          type: string
+        owner:
+          type: string
+        users:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              email:
+                type: string
+                format: email
+              role:
+                type: string
+                enum: [teamUser, teamAdmin, teamOwner]
+        invitations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Invitation'
+      example:
+        name: fake team
+        owner: 5ebac534954b54139806c112
+        users:
+          - id: 5ebac534954b54139806c112
+            name: fake name
+            email: fake@example.com
+            role: teamOwner
+        invitations:
+          - email: fake_invitation@example.com
+            role: teamAdmin
+            created: 2020-05-12T16:18:04.793Z
+
+    Token:
+      type: object
+      properties:
+        token:
+          type: string
+        expires:
+          type: string
+          format: date-time
+      example:
+        token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1ZWJhYzUzNDk1NGI1NDEzOTgwNmMxMTIiLCJpYXQiOjE1ODkyOTg0ODQsImV4cCI6MTU4OTMwMDI4NH0.m1U63blB0MLej_WfB7yC2FTMnCziif9X8yzwDEfJXAg
+        expires: 2020-05-12T16:18:04.793Z
+
+    AuthTokens:
+      type: object
+      properties:
+        access:
+          $ref: '#/components/schemas/Token'
+        # refresh:
+        #   $ref: '#/components/schemas/Token'
+
+    Product:
+      type: object
+      properties:
+        product:
+          type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            active:
+              type: boolean
+            metadata:
+              type: object
+        price:
+          type: object
+          properties:
+            unit_amount:
+              type: number
+            currency:
+              type: string
+            recurring:
+              type: object
+              properties:
+                interval:
+                  type: string
+            metadata:
+              type: object
+      example:
+        product:
+          name: Basic
+          description: Basic SaaS subscription
+          active: true
+          metadata:
+            type: basic
+        price:
+          unit_amount: 1000
+          currency: usd
+          recurring:
+            interval: month
+          metadata:
+            type: basic
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: number
+        message:
+          type: string
+
+  responses:
+    DuplicateEmail:
+      description: Email already taken
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 400
+            message: Email already taken
+    SubcriptionAlreadyActive:
+      description: Subscription already active
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 400
+            message: Subscription plan is already active
+    StripeError:
+      description: Stripe error occured
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 400
+            message: Some error occured
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 401
+            message: Please authenticate
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 403
+            message: Forbidden
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 404
+            message: Not found
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
